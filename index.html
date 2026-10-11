@@ -104,7 +104,6 @@ label.fileb{display:block;text-align:center;padding:12px;border:1.5px dashed var
 .cc{aspect-ratio:1/1.05;border-radius:12px;border:1px solid var(--line);background:var(--card);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:15px}
 .cc small{font-weight:400;color:var(--mut);font-size:10px}.cc.sel{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal) inset}.cc.td{background:var(--sand2)}
 .dts{display:flex;gap:3px;position:absolute;bottom:4px}.dts i{width:6px;height:6px;border-radius:50%}.dts .t{background:var(--teal)}.dts .e{background:#b8892f}.dts .a{background:#c0392b}
-[data-a="addC"],[data-a="addW"],[data-a="delU"],[data-a="delN"]{display:none!important}
 </style>
 </head>
 <body>
@@ -162,7 +161,7 @@ const pw=(id,ac)=>`<div class="pw"><input id="${id}" type="password" dir="ltr" a
 function login0(){
 if(S.auth==='reg')return reg();
 $('#app').innerHTML=`<div class="login"><img src="${LOGO}" alt="شعار مقرأة آمنة"><h1>مقرأة آمنة الإلكترونية</h1><p>منصة لإدارة المهام</p>
-<div class="fm"><label for="lu">البريد الإلكتروني</label><input id="lu" dir="ltr" autocomplete="username"><label for="lp">كلمة المرور</label>${pw('lp','current-password')}
+<div class="fm"><label for="lu">البريد الإلكتروني أو رقم الجوال</label><input id="lu" dir="ltr" autocomplete="username"><label for="lp">كلمة المرور</label>${pw('lp','current-password')}
 <label class="chk"><input id="rm" type="checkbox">تذكّرني</label><div id="er" class="err" role="alert"></div>
 <button class="btn" data-a="doLogin">تسجيل الدخول</button><button class="link" data-a="forgot">نسيت كلمة المرور؟</button><button class="link" data-a="toReg">إنشاء حساب جديد لكادر المقرأة</button></div>
 </div>`}
@@ -311,7 +310,7 @@ const RL={d:'إدارية قسم',a:'مساعدة إدارية',v:'متطوعة'
 const sw=!m.sup&&mgmt().length&&Object.values(m.mem).includes('v');
 const nv=[['tasks','المهام'],['cal','التقويم'],['alerts','التنبيهات'],...(A&&dAdm().length?[['rep','التقرير'],['staff','الكوادر']]:[]),...(A&&m.sup?[['top','الإدارة']]:[])];
 const pn=S.users.filter(x=>x.req.some(d=>(m.sup?REG:dAdm()).includes(d))).length;
-$('#app').innerHTML=`<div class="top"><div class="row"><img src="${LOGO}" alt=""><div><h2>${esc(m.n||m.sup)}${m.sup?` <button class="pen" data-a="name" aria-label="تعديل الاسم">${svg('pen',14)}</button>`:''}</h2><small>${role}</small>${sw?`<button class="swb" data-a="sw">⇄ ${A?'واجهة التطوع':'واجهة الإدارة'}</button>`:''}</div><span class="sp"></span><button class="outb" data-a="out">تسجيل الخروج</button></div>
+$('#app').innerHTML=`<div class="top"><div class="row"><img src="${LOGO}" alt=""><div><h2>${esc(m.n||m.sup)}${m.sup?` <button class="pen" data-a="name" aria-label="تعديل الاسم">${svg('pen',14)}</button>`:''}</h2><small>${role}</small>${sw?`<button class="swb" data-a="sw">⇄ ${A?'واجهة التطوع':'واجهة الإدارة'}</button>`:''}</div><span class="sp"></span><button class="outb" data-a="pwd">كلمة المرور</button> <button class="outb" data-a="out">تسجيل الخروج</button></div>
 <div class="prog"><i style="width:${p}%"></i></div><div class="prog-t"><span>${A?'إنجاز المهام في أقسامك':'إنجازك'}</span><span>${p}%</span></div></div>${b}
 ${A&&S.view==='tasks'&&mgmt().length?'<button class="fab" data-a="newTask" aria-label="إضافة مهمة">＋</button>':''}
 <nav class="nav"><div>${nv.map(([k,n])=>{const c=k==='alerts'?u:k==='staff'?pn:0;return `<button class="${S.view===k?'on':''}" data-a="view" data-k="${k}"><b>${svg(k)}</b>${n}${c?`<span class="dot">${c}</span>`:''}</button>`}).join('')}</div></nav>`;
@@ -425,7 +424,7 @@ try{const r=localStorage.getItem(RK),x=r&&U(r);if(x&&x.st==='active'){S.user=r;S
 render();chk();setInterval(chk,60000);setInterval(()=>{if(S.user)refresh(1)},8000);window.addEventListener('storage',e=>{if(e.key===KEY&&S.user)refresh(1)});
 /* ================== Supabase data layer (replaces the browser-only demo storage) ================== */
 const SB_URL='https://ywnnkiurvolebkzhqzta.supabase.co',SB_KEY='sb_publishable_6W11S6ZBxi2gv3AmKLzSwg_8dyaLNzm';
-let REM=true,DN={},DI={},CH=null,TM=null;
+let REM=true,DN={},DI={},CH=null,TM=null,MAIL_OK=false,REC=/type=recovery/.test(location.hash||'');
 const store={getItem:k=>{try{const v=sessionStorage.getItem(k);return v!==null?v:localStorage.getItem(k)}catch(e){return null}},
 setItem:(k,v)=>{try{(REM?localStorage:sessionStorage).setItem(k,v)}catch(e){}},removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
 const DB=supabase.createClient(SB_URL,SB_KEY,{auth:{storage:store,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -466,11 +465,19 @@ function chk(){}
 async function refresh(silent){if(silent||!S.user)return;if(await pull()){render();toast('تم تحديث البيانات')}}
 
 /* ---------- sign in / up / out ---------- */
-async function doLogin(){const em=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;REM=$('#rm').checked;
-if(!em||!p)return msg('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
-busy(1);const {data,error}=await DB.auth.signInWithPassword({email:em,password:p});
-if(error){busy(0);return msg(/not confirmed/i.test(error.message)?'لم يُؤكَّد البريد الإلكتروني بعد.':'البيانات غير صحيحة، تأكدي من البريد الإلكتروني وكلمة المرور.')}
-const r=await enter0(data.user.id);busy(0);if(r){S.user=null;login();msg(r)}}
+async function callFn(name,body){const {data,error}=await DB.functions.invoke(name,{body});
+if(error){let m='';try{const j=await error.context.json();m=j.error||''}catch(e){}return {error:m||'تعذّر تنفيذ الطلب، حاولي مرة أخرى.'}}
+return data||{}}
+async function doLogin(){const raw=$('#lu').value.trim(),p=$('#lp').value;REM=$('#rm').checked;
+if(!raw||!p)return msg('يرجى إدخال البريد الإلكتروني أو رقم الجوال وكلمة المرور.');
+busy(1);let uid=null;const bad='البيانات غير صحيحة، تأكدي من بيانات الدخول وكلمة المرور.';
+if(raw.includes('@')){const {data,error}=await DB.auth.signInWithPassword({email:raw.toLowerCase(),password:p});
+if(error){busy(0);return msg(/not confirmed/i.test(error.message)?'لم يُؤكَّد البريد الإلكتروني بعد.':bad)}uid=data.user.id}
+else{const r=await callFn('phone-login',{phone:raw,password:p});
+if(r.error||!r.access_token){busy(0);return msg(r.error==='throttled'?'محاولات كثيرة، حاولي بعد قليل.':bad)}
+const {data,error}=await DB.auth.setSession({access_token:r.access_token,refresh_token:r.refresh_token});
+if(error||!data.user){busy(0);return msg('تعذّر تسجيل الدخول، حاولي مرة أخرى.')}uid=data.user.id}
+const r2=await enter0(uid);busy(0);if(r2){S.user=null;login();msg(r2)}}
 async function doReg(){const v=i=>$(i).value.trim(),n=v('#rn'),em=v('#re').toLowerCase(),m=v('#rmb'),p=$('#rp').value,rq=[...document.querySelectorAll('.rd')].filter(x=>x.checked).map(x=>x.value);
 const er=chkU(n,em,m,p,$('#rc').value);if(er)return msg(er);
 if(!rq.length)return msg('يرجى اختيار قسم واحد على الأقل.');
@@ -482,7 +489,12 @@ busy(0);S.auth='login';login();
 const e=sheet(`<div style="text-align:center"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/></svg><h3 style="margin-top:8px">تم استقبال طلبك</h3><p>وفي انتظار تفعيل الحساب من إدارة المقرأة.</p><div class="hint">سيُتاح لكِ الدخول بعد قبول طلبك من الإدارة.</div><button class="btn" id="y" style="margin-top:16px">حسنًا</button></div>`,0,1);
 e.querySelector('#y').onclick=()=>e.remove()}
 async function out(){if(CH){DB.removeChannel(CH);CH=null}try{await DB.auth.signOut()}catch(e){}S.user=null;S.users=[];S.tasks=[];S.alerts=[];S.log=[];S.events=[];S.auth='login';render()}
-function forgot(){const e=sheet(`<h3>استعادة كلمة المرور</h3><p>أدخلي البريد الإلكتروني المسجّل.</p><input id="fq" type="email" dir="ltr"><div id="fm" class="hint">سيصل رابط الاستعادة إلى بريدكِ.</div><div class="two"><button class="btn" id="y">إرسال رابط الاستعادة</button><button class="btn ghost" id="n">إغلاق</button></div>`);
+function forgot(){
+if(!MAIL_OK){const e=sheet(`<h3>استعادة كلمة المرور</h3><p>أدخلي بريدكِ الإلكتروني أو رقم جوالكِ، وسيصل طلبكِ إلى إدارة المقرأة لتزويدكِ بكلمة مرور جديدة.</p><input id="fq" dir="ltr" autocomplete="username"><div id="fm" class="hint">ستتواصل معكِ المديرة أو الوكيلة.</div><div class="two"><button class="btn" id="y">إرسال الطلب</button><button class="btn ghost" id="n">إغلاق</button></div>`);
+e.querySelector('#n').onclick=()=>e.remove();
+e.querySelector('#y').onclick=async()=>{const v=e.querySelector('#fq').value.trim();if(!v)return toast('يرجى إدخال البريد الإلكتروني أو رقم الجوال');
+await callFn('request-reset',{identifier:v});e.querySelector('#fm').textContent='تم إرسال طلبكِ إلى إدارة المقرأة. ستتواصل معكِ المديرة أو الوكيلة بكلمة مرور جديدة.'};return}
+const e=sheet(`<h3>استعادة كلمة المرور</h3><p>أدخلي البريد الإلكتروني المسجّل.</p><input id="fq" type="email" dir="ltr"><div id="fm" class="hint">سيصل رابط الاستعادة إلى بريدكِ.</div><div class="two"><button class="btn" id="y">إرسال رابط الاستعادة</button><button class="btn ghost" id="n">إغلاق</button></div>`);
 e.querySelector('#n').onclick=()=>e.remove();
 e.querySelector('#y').onclick=async()=>{const em=e.querySelector('#fq').value.trim().toLowerCase();if(!em)return toast('يرجى إدخال البريد الإلكتروني');
 await DB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});e.querySelector('#fm').textContent='إن كان الحساب مسجّلًا فسيصله رابط الاستعادة خلال دقائق.'}}
@@ -491,6 +503,17 @@ e.querySelector('#y').onclick=async()=>{const a=e.querySelector('#n1').value,b=e
 if(a.length<8||!/[A-Za-z]/.test(a)||!/\d/.test(a))return msg('كلمة المرور: 8 خانات على الأقل وتتضمن حروفًا وأرقامًا.');if(a!==b)return msg('كلمتا المرور غير متطابقتين.');
 const {error}=await DB.auth.updateUser({password:a});if(error)return msg('تعذّر الحفظ، حاولي مرة أخرى.');e.remove();toast('تم تغيير كلمة المرور');history.replaceState(null,'',location.pathname)}}
 
+function changePwd(){const m=me();
+const e=sheet(`<h3>تغيير كلمة المرور</h3><label for="q1">كلمة المرور الحالية</label>${pw('q1','current-password')}<label for="q2">كلمة المرور الجديدة</label>${pw('q2','new-password')}<div class="hh">8 خانات على الأقل، وتتضمن حروفًا وأرقامًا.</div><label for="q3">تأكيد كلمة المرور الجديدة</label>${pw('q3','new-password')}<div id="er" class="err" role="alert"></div><div class="two"><button class="btn" id="y">حفظ</button><button class="btn ghost" id="n">إلغاء</button></div>`,0,1);
+e.querySelector('#n').onclick=()=>e.remove();
+e.querySelector('#y').onclick=async()=>{const cur=e.querySelector('#q1').value,a=e.querySelector('#q2').value,b=e.querySelector('#q3').value;
+if(!cur)return msg('يرجى إدخال كلمة المرور الحالية.');
+if(a.length<8||!/[A-Za-z]/.test(a)||!/\d/.test(a))return msg('كلمة المرور الجديدة: 8 خانات على الأقل وتتضمن حروفًا وأرقامًا.');
+if(a!==b)return msg('كلمتا المرور غير متطابقتين.');if(a===cur)return msg('يجب أن تختلف الكلمة الجديدة عن الحالية.');
+const btn=e.querySelector('#y');btn.disabled=true;
+const c=await DB.auth.signInWithPassword({email:m.em,password:cur});if(c.error){btn.disabled=false;return msg('كلمة المرور الحالية غير صحيحة.')}
+const u=await DB.auth.updateUser({password:a});if(u.error){btn.disabled=false;return msg('تعذّر تغيير كلمة المرور، حاولي مرة أخرى.')}
+e.remove();toast('تم تغيير كلمة المرور')}}
 /* ---------- first-login window for the director / deputy ---------- */
 function askSetup(){const m=me();
 const e=sheet(`<button class="x" id="x" aria-label="إغلاق">×</button><h3>مرحبًا بكِ</h3><p>لتفعيل حسابكِ، يرجى إكمال البيانات التالية.</p><label for="s1">الاسم الأول</label><input id="s1" value="${m.named?esc(m.n):''}"><label for="s2">البريد الإلكتروني الجديد</label><input id="s2" type="email" dir="ltr" autocomplete="email"><label for="s3">تأكيد البريد الإلكتروني</label><input id="s3" type="email" dir="ltr">
@@ -523,16 +546,44 @@ async function onx(b){done('تمت إعادة تفعيل الحساب',await DB.
 function delA(b){ask('حذف هذا التنبيه؟',async()=>done('تم حذف التنبيه',await DB.from('alerts').delete().eq('id',b.dataset.id)))}
 function delL(b){const x=S.log[+b.dataset.i];if(x)ask('حذف هذا السجل من الأرشيف؟',async()=>done('تم الحذف',await DB.from('task_log').delete().eq('id',x.id)))}
 async function openFile(b){const {data,error}=await DB.storage.from('task-files').createSignedUrl(b.dataset.p,300);if(error||!data)return toast('تعذّر فتح الملف');window.open(data.signedUrl,'_blank','noopener')}
-function editC(id){const u=U(id),D=dAdm(),sup=!!me().sup;if(!u)return;
-const e=sheet(`<h3>أقسام الكادر</h3><p><b>${esc(u.n)}</b></p><label>الأقسام والصفة (فعّلي قسمًا لإضافته)</label>${dRows(D,sup,u.mem)}<div id="er" class="err" role="alert"></div><div class="two"><button class="btn" id="sv">حفظ</button><button class="btn ghost" id="cl">إلغاء</button></div>`);
+function editC(id){const u=U(id),sup=!!me().sup,D=dAdm();if(!u)return;
+const e=sheet(`<h3>${sup?'تعديل بيانات الكادر':'أقسام الكادر'}</h3>${sup?`<label for="c1">الاسم الكامل</label><input id="c1" value="${esc(u.n)}"><label for="c2">البريد الإلكتروني</label><input id="c2" type="email" dir="ltr" value="${esc(u.em)}"><label for="c3">رقم الجوال</label><input id="c3" type="tel" dir="ltr" value="${esc(u.m)}"><label for="c4">كلمة مرور جديدة (اختياري)</label>${pw('c4','new-password')}<button type="button" class="link" id="gen" style="margin:6px 0 0">توليد كلمة مرور مؤقتة</button>`:`<p><b>${esc(u.n)}</b></p>`}<label>الأقسام والصفة (فعّلي قسمًا لإضافته)</label>${dRows(D,sup,u.mem)}<div id="er" class="err" role="alert"></div><div class="two"><button class="btn" id="sv">حفظ</button><button class="btn ghost" id="cl">إلغاء</button></div>`);
 e.querySelector('#cl').onclick=()=>e.remove();
-e.querySelector('#sv').onclick=async()=>{const nw=readRows(e,D);let bad=0;
+const gb=e.querySelector('#gen');if(gb)gb.onclick=()=>{const Lt='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ',Nd='23456789',r=new Uint32Array(10);crypto.getRandomValues(r);const i=e.querySelector('#c4');i.type='text';i.value=[...r].map((x,k)=>k<7?Lt[x%Lt.length]:Nd[x%Nd.length]).join('')};
+e.querySelector('#sv').onclick=async()=>{
+if(sup){const v=i=>e.querySelector(i).value.trim(),n=v('#c1'),em=v('#c2').toLowerCase(),mb=v('#c3'),np=e.querySelector('#c4').value;
+if(n.split(/\s+/).length<2)return msg('يرجى إدخال الاسم الثنائي على الأقل.');
+if(!/^\S+@\S+\.\S+$/.test(em))return msg('يرجى إدخال بريد إلكتروني صحيح.');
+if(!/^\d{9,15}$/.test(ph(mb)))return msg('يرجى إدخال رقم جوال صحيح.');
+if(np&&(np.length<8||!/[A-Za-z]/.test(np)||!/\d/.test(np)))return msg('كلمة المرور: 8 خانات على الأقل وتتضمن حروفًا وأرقامًا.');
+const body={action:'update_member',user_id:u.id};if(n!==u.n)body.full_name=n;if(em!==(u.em||'').toLowerCase())body.email=em;if(ph(mb)!==ph(u.m))body.phone=mb;if(np)body.new_password=np;
+if(Object.keys(body).length>2){const r=await callFn('admin-ops',body);if(r.error)return msg(r.error)}}
+const nw=readRows(e,D);let bad=0;
 for(const d of D){const cur=u.mem[d];if(cur==='d'&&!sup)continue;
 if(nw[d]&&nw[d]!==cur){const r=await DB.rpc('set_membership',{p_user:u.id,p_dept:DI[d],p_role:nw[d]});if(r.error)bad=1}
 else if(!nw[d]&&cur){const r=await DB.rpc('remove_membership',{p_user:u.id,p_dept:DI[d]});if(r.error)bad=1}}
 e.remove();await pull();render();toast(bad?'تعذّر تنفيذ بعض التغييرات':'تم حفظ التعديلات')}}
+function addC(){const sup=!!me().sup,D=dAdm();
+const e=sheet(`<h3>إضافة كادر / إدارية</h3><label for="c1">الاسم الكامل</label><input id="c1"><label for="c2">البريد الإلكتروني</label><input id="c2" type="email" dir="ltr"><label for="c3">رقم الجوال</label><input id="c3" type="tel" dir="ltr"><label for="c4">كلمة مرور مؤقتة</label>${pw('c4','new-password')}<label>الأقسام والصفة</label>${dRows(D,sup,{})}<div id="er" class="err" role="alert"></div><div class="two"><button class="btn" id="sv">إضافة</button><button class="btn ghost" id="cl">إلغاء</button></div>`);
+e.querySelector('#cl').onclick=()=>e.remove();
+e.querySelector('#sv').onclick=async()=>{const v=i=>e.querySelector(i).value.trim(),p=e.querySelector('#c4').value,er=chkU(v('#c1'),v('#c2'),v('#c3'),p,p);if(er)return msg(er);
+const ms=Object.entries(readRows(e,D)).map(([d,r])=>({dept_id:DI[d],role:r}));if(!ms.length)return msg('يرجى اختيار قسم واحد على الأقل مع تحديد الصفة.');
+const btn=e.querySelector('#sv');btn.disabled=true;
+const r=await callFn('admin-ops',{action:'create_member',full_name:v('#c1'),email:v('#c2').toLowerCase(),phone:v('#c3'),password:p,memberships:ms});
+if(r.error){btn.disabled=false;return msg(r.error)}e.remove();await pull();render();toast('أُضيف الحساب')}}
+function addW(){const e=sheet(`<h3>إضافة وكيلة جديدة</h3><label for="w1">البريد الإلكتروني</label><input id="w1" type="email" dir="ltr" autocomplete="off"><label for="w2">كلمة مرور مؤقتة</label>${pw('w2','new-password')}<div id="er" class="err" role="alert"></div><div class="two"><button class="btn" id="sv">إضافة</button><button class="btn ghost" id="cl">إلغاء</button></div>`);
+e.querySelector('#cl').onclick=()=>e.remove();
+e.querySelector('#sv').onclick=async()=>{const em=e.querySelector('#w1').value.trim().toLowerCase(),p=e.querySelector('#w2').value;
+if(!/^\S+@\S+\.\S+$/.test(em))return msg('يرجى إدخال بريد إلكتروني صحيح.');
+if(p.length<8||!/[A-Za-z]/.test(p)||!/\d/.test(p))return msg('كلمة المرور: 8 خانات على الأقل وتتضمن حروفًا وأرقامًا.');
+const btn=e.querySelector('#sv');btn.disabled=true;const r=await callFn('admin-ops',{action:'create_deputy',email:em,password:p});
+if(r.error){btn.disabled=false;return msg(r.error)}e.remove();await pull();render();toast('أُضيفت الوكيلة')}}
+function delU(id){const x=U(id);if(!x)return;const k=S.tasks.filter(t=>t.who.includes(id)).length,nmx=x.n||x.sup;
+const run=async d=>{const r=await callFn('admin-ops',{action:'delete_account',user_id:id,delete_sole_tasks:!!d});if(r.error)return toast(r.error);await pull();render();toast('تم حذف الحساب')};
+ask('حذف حساب «'+nmx+'» نهائيًا؟ (يُفضَّل التعطيل للحفاظ على الأرشيف)',()=>{if(!k)return run(0);ask('لدى «'+nmx+'» '+k+' مهمة مسندة. ماذا تريدين بها؟',()=>run(1),()=>run(0),'حذف المهام الخاصة بها وحدها','إبقاؤها دون مسؤولة')})}
+function delN(b){ask('حذف هذه الملاحظة؟',async()=>{const r=await callFn('admin-ops',{action:'clear_note',task_id:b.dataset.id,user_id:b.dataset.w});if(r.error)return toast(r.error);await pull();render();toast('تم الحذف')})}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
-const M={out,acc,rej,rmd,off,on:onx,delA,delL,file:openFile};
+const M={pwd:changePwd,out,acc,rej,rmd,off,on:onx,delA,delL,delN,file:openFile};
 if(M[a]){ev.stopPropagation();M[a](b);return}
 if(a==='view'&&b.dataset.k==='alerts'&&S.user)DB.rpc('mark_alerts_read').then(()=>{})},true);
 
@@ -630,7 +681,7 @@ const d=e.querySelector('#dl');if(d)d.onclick=()=>ask('حذف هذه المحط�
 (async function boot(){
 try{const {data}=await DB.from('departments').select('id,name');(data||[]).forEach(d=>{DN[d.id]=d.name;DI[d.name]=d.id});
 const {data:{session}}=await DB.auth.getSession();if(session){const r=await enter0(session.user.id);if(r)S.auth='login'}}catch(e){}
-S.boot=0;render();
+S.boot=0;render();if(REC){REC=false;if(S.user)recover()}
 DB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')recover();if(ev==='SIGNED_OUT'&&S.user){S.user=null;render()}});
 setInterval(()=>{if(S.user&&!document.querySelector('.sheet-bg'))pull().then(ok=>ok&&render())},60000)})();
 </script>
